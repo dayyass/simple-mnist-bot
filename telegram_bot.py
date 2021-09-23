@@ -3,7 +3,7 @@ import os
 from telebot import TeleBot
 from tensorflow import keras
 
-from .utils import preprocess_image
+from utils import preprocess_image
 
 if __name__ == "__main__":
 
@@ -33,6 +33,7 @@ if __name__ == "__main__":
         logits = model(img)
         cls = logits.numpy()[0].argmax()
 
-        bot.send_message(message.chat.id, cls)
+        msg = f"На фотографии изображено число {cls}"
+        bot.send_message(message.chat.id, msg)
 
     bot.polling()
