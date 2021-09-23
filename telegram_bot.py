@@ -1,10 +1,16 @@
 import os
 
 from telebot import TeleBot
+from tensorflow import keras
+
+from .utils import preprocess_image
 
 if __name__ == "__main__":
+
     TOKEN = os.environ["TOKEN"]
     bot = TeleBot(TOKEN)
+
+    model = keras.models.load_model("model")
 
     @bot.message_handler(commands=["start"])
     def start_message(message):
@@ -16,19 +22,17 @@ if __name__ == "__main__":
         msg = "Отправь мне изображение, чтобы я мог классифицировать его :)"
         bot.send_message(message.chat.id, msg)
 
-    # @bot.message_handler(content_types=["photo"])
-    # def send_image(message):
-    #     fileID = message.photo[-1].file_id
-    #     file = bot.get_file(fileID)
-    #     downloaded_file = bot.download_file(file.file_path)
+    @bot.message_handler(content_types=["photo"])
+    def send_image(message):
 
-    #     arr = Image.open(io.BytesIO(downloaded_file))
-    #     arr = np.array(arr)
-    #     caption = apply_model_to_image(arr)
+        fileID = message.photo[-1].file_id
+        file = bot.get_file(fileID)
+        downloaded_file = bot.download_file(file.file_path)
 
-    #     translations = translator.translate(caption, dest="ru", src="en")
-    #     ru_caption = translations.text
+        img = preprocess_image(downloaded_file)
+        logits = model(img)
+        cls = logits.numpy()[0].argmax()
 
-    #     bot.send_message(message.chat.id, "{}\n{}".format(caption, ru_caption))
+        bot.send_message(message.chat.id, cls)
 
     bot.polling()
