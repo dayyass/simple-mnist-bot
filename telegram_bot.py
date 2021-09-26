@@ -3,14 +3,26 @@ import os
 from telebot import TeleBot
 from tensorflow import keras
 
-from utils import preprocess_image
+from utils import inference, preprocess_image
+
+
+def get_bot():
+    bot = TeleBot(os.environ["TOKEN"])
+    return bot
+
+
+def get_model(path):
+    model = keras.models.load_model(path)
+    return model
+
 
 if __name__ == "__main__":
 
-    TOKEN = os.environ["TOKEN"]
-    bot = TeleBot(TOKEN)
+    # get telegram bot
+    bot = get_bot()
 
-    model = keras.models.load_model("model")
+    # get keras model
+    model = get_model(path="model")
 
     @bot.message_handler(commands=["start"])
     def start_message(message):
@@ -30,8 +42,7 @@ if __name__ == "__main__":
         downloaded_file = bot.download_file(file.file_path)
 
         img = preprocess_image(downloaded_file)
-        logits = model(img)
-        cls = logits.numpy()[0].argmax()
+        cls = inference(model, img)
 
         msg = f"На фотографии изображено число {cls}"
         bot.send_message(message.chat.id, msg)
